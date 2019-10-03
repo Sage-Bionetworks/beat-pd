@@ -653,3 +653,15 @@ write.csv(ENET_results, "Analyses/CISPD_ENET_model_scores_total_and_byLabel.csv"
 rm(list=c("tmp", "tmp0", "tmp1"))
 
 save.image("Analyses/Features/CIS-PD_Build_Models_Try2.Rdata")
+
+
+#Store to Synapse
+act<-Activity(name='CIS-PD Modeling/Scoring', description='Individual model building bootstrapping and scoring via (macro and traditional) MSE/MAE and within label class')
+act$used(c('syn20712268', 'syn20489608'))
+act$executed('https://raw.githubusercontent.com/sieberts/pddb2/master/Modeling_Solly/CIS-PD_Build_Models_v2.R')
+
+syncart<-File("Analyses/CISPD_CART_model_scores_total_and_byLabel.csv", parentId='syn20833961')
+syncart<-synStore(syncart, activity=act)
+
+synenet<-File("Analyses/CISPD_ENET_model_scores_total_and_byLabel.csv", parentId='syn20833961')
+synenet<-synStore(synenet, activity=act)
