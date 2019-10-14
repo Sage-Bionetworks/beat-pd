@@ -1604,3 +1604,33 @@ tremor_10_summary<- tremor_results_mse_mae %>%
 
 
 save.image("Analyses/Features/CIS-PD_Build_Models_10obsmin.Rdata")
+
+
+library(corrr)
+
+compute_pheno_cor<-function(indid, scoresi, mincatsize=10, mintotalsize=40){
+  print(indid)
+  scoresi<-scores[scores$subject_id==indid,]
+  for(trait in c("on_off", "dyskinesia", "tremor")){
+    tbscores<-table(scoresi[,trait])
+    if(any(tbscores)<mincatsize){
+      scoresi[scoresi[,trait]%in%as.numeric(names(which(tbscores<mincatsize))),trait]<-NA
+    }
+    if(sum(!is.na(scoresi[,trait]))<mintotalsize | length(table(scoresi[,trait]))<2){
+      scoresi[,trait]<-NA
+    }
+  }
+#  scoresi<-scoresi[!is.na(scoresi$on_off)|!is.na(scoresi$dyskinesia)|!is.na(scoresi$tremor),]
+  if(sum(!is.na(scoresi$on_off)|!is.na(scoresi$dyskinesia)|!is.na(scoresi$tremor))>0){
+    res<-correlate(scoresi[,c("on_off", "dyskinesia", "tremor")], use="pairwise.complete") %>% shave() %>% stretch() %>% filter(!is.na(r))
+    if(dim(res)[1]>0){
+      res<-data.frame(subject_id=indid, res, stringsAsFactors = F)
+      return(res)
+    }
+  }
+}
+all_cors_10_40<-lapply(indidvec, compute_pheno_cor, scoresi=scores_filtered)
+all_cors_10_40<-do.call('rbind', all_cors_10_40)
+
+save.image("Analyses/Features/CIS-PD_Build_Models_10obsmin.Rdata")
+
