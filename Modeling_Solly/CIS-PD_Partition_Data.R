@@ -66,7 +66,9 @@ write.csv(scores_withsplits, "Analyses/CISPD_Labels_training_splits.csv", row.na
 #Store to Synapse
 act<-Activity(name='CIS-PD Partition Data', description='Split into 75/25 training/test splits across phenotypes, 20 reps')
 act$used(c('syn20712268', 'syn20489608'))
-act$executed('https://raw.githubusercontent.com/sieberts/pddb2/master/Modeling_Solly/CIS-PD_Build_Models_v2.R')
+act$executed('https://raw.githubusercontent.com/sieberts/pddb2/master/Modeling_Solly/CIS-PD_Partition_Data.R')
 
+syncart<-File("Analyses/CISPD_Labels_training_splits.csv", parentId='syn20552049')
+syncart<-synStore(syncart, activity=act)
 
 
