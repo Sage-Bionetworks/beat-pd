@@ -171,12 +171,12 @@ tbls3<-lapply(unique(scores_withsplits_optimized$subject_id), function(x, scores
 }, scores=scores_withsplits_optimized)
 
 
-write.csv(scores_withsplits, "Analyses/CISPD_Labels_training_splits.csv", row.names = F, quote=F)
+write.csv(scores_withsplits_optimized, "Analyses/CISPD_Labels_training_splits.csv", row.names = F, quote=F)
 
 #Store to Synapse
 act<-Activity(name='CIS-PD Partition Data', description='Split into 75/25 training/test splits across phenotypes, 10 reps')
 act$used(c('syn20712268', 'syn20489608'))
-act$executed('https://raw.githubusercontent.com/sieberts/pddb2/master/Modeling_Solly/CIS-PD_Partition_Data.R')
+act$executed('https://raw.githubusercontent.com/sieberts/pddb2/master/Modeling_Solly/CIS-PD_Partition_Data_Select_Best.R')
 
 syncart<-File("Analyses/CISPD_Labels_training_splits.csv", parentId='syn20552049')
 syncart<-synStore(syncart, activity=act)
