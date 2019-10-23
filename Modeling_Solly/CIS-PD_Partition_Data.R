@@ -1,6 +1,5 @@
 setwd("~/Documents/PDDB Challenge 2/CIS-PD")
 
-library(caret)
 library(synapser)
 library(gdata)
 library(plyr)
@@ -18,7 +17,6 @@ scores<-scores[scores$measurement_id%in%features$ID,]
 scores<-scores[!(is.na(scores$on_off)&is.na(scores$dyskinesia)&is.na(scores$tremor)),]
 
 indidvec<-unique(scores$subject_id)
-
 
 is_enough_data<-function(x){
   if(sum(!is.na(x))>40 & (sum(table(x)>=10)>1 | sum(table(x)>=5)>2)){
@@ -38,9 +36,6 @@ subsample <- function(dat, p) {
   out
 }
 
-p<-0.75
-times<-20
-
 createsplits<-function(indid, scores, p, times){
   scoresi<-scores[scores$subject_id==indid,]
   traits<-c("on_off", "dyskinesia", "tremor")
@@ -58,6 +53,11 @@ createsplits<-function(indid, scores, p, times){
   }
 }
 
+set.seed(1000)
+
+p<-0.71
+times<-20
+
 scores_withsplits<-lapply(indidvec, createsplits, scores=scores, p=p, times=times)
 scores_withsplits<-do.call('rbind', scores_withsplits)
 
@@ -72,3 +72,12 @@ syncart<-File("Analyses/CISPD_Labels_training_splits.csv", parentId='syn20552049
 syncart<-synStore(syncart, activity=act)
 
 
+
+
+
+tbls<-lapply(unique(scores_withsplits$subject_id), function(x, scores){
+  lapply(c("on_off", "dyskinesia", "tremor"), function(y, x, scores){
+    scoresi<-scores[scores$subject_id==x,]
+    return(cbind(table(scoresi[,y], scoresi$training1), prop.table(table(scoresi[,y], scoresi$training1), margin = 1)))
+  }, x=x, scores=scores)
+}, scores=scores_withsplits)
