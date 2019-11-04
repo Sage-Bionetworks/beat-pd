@@ -13,9 +13,20 @@ scores$on_off[scores$on_off==-1]<-NA
 
 # Load features
 features<-read.csv("Analyses/Features/CIS-PD_Watch_Features_Full_NShawen.csv", header=T, as.is=T)
-scores<-scores[scores$measurement_id%in%features$ID,]
+
+
+# Load Nick's sensor QC summary data
+synfile<-synGet("syn21071756", downloadLocation="Analyses/Features/")
+msmtqc<-read.csv(synfile$path, header=T, as.is=T)
+
+winthresh<-4
+scores<-scores[scores$measurement_id%in%msmtqc$measurement_id[msmtqc$Highest...of.Consecutive.Above.Threshold.Windows>=winthresh],]
 
 scores<-scores[!(is.na(scores$on_off)&is.na(scores$dyskinesia)&is.na(scores$tremor)),]
+
+
+
+
 
 indidvec<-unique(scores$subject_id)
 
@@ -94,6 +105,7 @@ createsplits_v2<-function(indid, scores, p, times){
   
 set.seed(1000)
 times<-1000
+p<-0.75
 scores_withsplits_v2<-lapply(indidvec, createsplits_v2, scores=scores, p=p, times=times)
 scores_withsplits_v2<-do.call('rbind', scores_withsplits_v2)
 
@@ -171,14 +183,14 @@ tbls3<-lapply(unique(scores_withsplits_optimized$subject_id), function(x, scores
 }, scores=scores_withsplits_optimized)
 
 
-write.csv(scores_withsplits_optimized, "Analyses/CISPD_Labels_training_splits.csv", row.names = F, quote=F)
+write.csv(scores_withsplits_optimized, "Analyses/CISPD_Labels_training_splits_v2.csv", row.names = F, quote=F)
 
 #Store to Synapse
-act<-Activity(name='CIS-PD Partition Data', description='Split into 75/25 training/test splits across phenotypes, 10 reps')
+act<-Activity(name='CIS-PD Partition Data', description='Split into 75/25 training/test splits across phenotypes, 10 reps, after filtering low variance segments')
 act$used(c('syn20712268', 'syn20489608'))
 act$executed('https://raw.githubusercontent.com/sieberts/pddb2/master/Modeling_Solly/CIS-PD_Partition_Data_Select_Best.R')
 
-syncart<-File("Analyses/CISPD_Labels_training_splits.csv", parentId='syn20552049')
+syncart<-File("Analyses/CISPD_Labels_training_splits_v2.csv", parentId='syn20552049')
 syncart<-synStore(syncart, activity=act)
 
 
