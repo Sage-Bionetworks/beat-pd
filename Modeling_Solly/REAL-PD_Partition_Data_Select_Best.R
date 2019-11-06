@@ -203,7 +203,7 @@ write.csv(scores_withsplits_optimized, "Analyses/REALPD_Labels_training_splits_v
 #Store to Synapse
 act<-Activity(name='REAL-PD Partition Data', description='Split into 75/25 training/test splits across phenotypes, 10 reps, after filtering low variance segments')
 act$used(c('syn20822276', 'syn21123211', 'syn21123212'))
-act$executed('https://raw.githubusercontent.com/sieberts/pddb2/master/Modeling_Solly/CIS-PD_Partition_Data_Select_Best.R')
+act$executed('https://raw.githubusercontent.com/sieberts/pddb2/master/Modeling_Solly/REAL-PD_Partition_Data_Select_Best.R')
 
 syncart<-File("Analyses/REALPD_Labels_training_splits_v2.csv", parentId='syn20836185')
 syncart<-synStore(syncart, activity=act)
