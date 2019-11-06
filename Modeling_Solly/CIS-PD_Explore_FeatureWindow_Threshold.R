@@ -56,9 +56,16 @@ ggsave("Analyses/Plots/CIS-PD_dyskinesia_vs_bestConsecutiveWindow_qq.png")
 plot_qq(QCcor$consec.tremor, "Best Consecutive/Tremor")
 ggsave("Analyses/Plots/CIS-PD_tremor_vs_bestConsecutiveWindow_qq.png")
 
+qplot(msmtqc$Sub.Threshold.Windows, geom="histogram", xlab = "# Subthreshold Windows")
+ggsave("Analyses/Plots/CIS-PD_NumSubThresh_hist.png")
+qplot(msmtqc$Highest...of.Consecutive.Above.Threshold.Windows, geom="histogram", xlab = "Longest Above Threshold Window")
+ggsave("Analyses/Plots/CIS-PD_BestCohsecutiveWindow_hist.png")
+
+
+
 # Try various thresholds for data filtering
 
-thrsh<-c(4, 6, 8, 10)
+thrsh<-c(0, 4, 6, 8, 10)
 
 
 is_enough_data<-function(x){
@@ -90,4 +97,14 @@ res_numtotal<-do.call('rbind', res_numtotal)
 
 res_numtotal<-pivot_wider(res_numtotal, id_cols = subject_id, names_from = Threshold, values_from = c(on_off, dyskinesia_tremor))
 res_numtotal<-res_numtotal[res_numtotal$subject_id%in%res$subject_id,]
+
+
+onofftotal<-colSums(res_numtotal[, grep("on_off", names(res_numtotal))]*res$on_off_0)
+onofftotal[1]-onofftotal
+
+dyskinesiatotal<-colSums(res_numtotal[, grep("dyskinesia", names(res_numtotal))]*res$dyskinesia_0)
+dyskinesiatotal[1]-dyskinesiatotal
+
+tremortotal<-colSums(res_numtotal[, grep("tremor", names(res_numtotal))]*res$tremor_0)
+tremortotal[1]-tremortotal
 
