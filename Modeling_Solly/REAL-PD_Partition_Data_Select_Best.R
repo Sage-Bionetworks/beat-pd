@@ -4,6 +4,7 @@ setwd("~/Documents/PDDB Challenge 2/REAL-PD")
 library(synapser)
 library(gdata)
 library(plyr)
+library(dplyr)
 
 alltraits<-c("slowness_walking", "tremor", "on_off", "dyskinesia")
 
