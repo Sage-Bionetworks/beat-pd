@@ -173,8 +173,6 @@ split_ranks<-lapply(unique(scores_withsplits_v2$subject_id),comp_lowestvar_split
                     scoresi=scores_withsplits_v2, p=p)  
 
 
-library(dplyr)
-
 
 names(split_ranks)<-unique(scores_withsplits_v2$subject_id)
 scores_withsplits_optimized<-lapply(names(split_ranks), function(indid, split_ranks, scoresi, nreps=10){
