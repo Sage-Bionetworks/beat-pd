@@ -86,7 +86,7 @@ res<-do.call('rbind', res)
 res<-pivot_wider(res, id_cols = subject_id, names_from = Threshold, values_from = c(on_off, dyskinesia, tremor))
 res<-res[!apply(!res[,-1], 1, all),]
 
-
+# For dyskinesia, individual 1044 gets dropped with threshold 6
 
 res_numtotal<-lapply(thrsh, function(x, data){
   res<-data %>% group_by(subject_id) %>% summarize(on_off=sum(Highest...of.Consecutive.Above.Threshold.Windows >= x&!is.na(on_off)), dyskinesia_tremor=sum(Highest...of.Consecutive.Above.Threshold.Windows >= x))
@@ -108,3 +108,4 @@ dyskinesiatotal[1]-dyskinesiatotal
 tremortotal<-colSums(res_numtotal[, grep("tremor", names(res_numtotal))]*res$tremor_0)
 tremortotal[1]-tremortotal
 
+save.image("../Code/CIS-PD Modeling/Modeling_Solly/CIS-PD_Explore_FeatureWindow_Threshold.Rdata")
