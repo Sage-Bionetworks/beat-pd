@@ -169,6 +169,14 @@ res_numtotal<-pivot_wider(res_numtotal, id_cols = subject_id, names_from = Thres
 res_numtotal<-res_numtotal[res_numtotal$subject_id%in%res$subject_id,]
 
 
+onofftotal<-colSums(res_numtotal[, grep("on_off", names(res_numtotal))]*res$on_off_0)
+onofftotal[1]-onofftotal
+
+dyskinesiatotal<-colSums(res_numtotal[, grep("dyskinesia", names(res_numtotal))]*res$dyskinesia_0)
+dyskinesiatotal[1]-dyskinesiatotal
+
+tremortotal<-colSums(res_numtotal[, grep("tremor", names(res_numtotal))]*res$tremor_0)
+tremortotal[1]-tremortotal
 
 
 plot_qq(QCcorphone$subth.on_off[QCcorphone$subject_id%in%res$subject_id[res$on_off_4]], "Num Sub-threshold/On-Off")
