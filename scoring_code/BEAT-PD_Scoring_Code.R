@@ -10,7 +10,20 @@
 #
 
 library(synapser)
+library(optparse)
 library(dplyr)
+
+read_args <- function() {
+  option_list <- list(
+    make_option("--submission_file", type = "character",
+                help = "Path to submission (prediction) file."),
+    make_option("--phenotype", type = "character",
+                help = "One of 'on_off', 'tremor', 'dyskinesia'."),
+    make_option("--output_file", type = "character",
+                help = "Where to output results."))
+  opt <- parse_args(OptionParser(option_list = option_list))
+  return(opt)
+}
 
 weightedMSE<-function(filename, trait){
   # Get predictions and truth
@@ -42,4 +55,9 @@ getTruth<-function(trait){
 
 getMSE<-function(x, y){
   return(mean((x-y)^2))
+}
+
+main <- function() {
+  args <- read_args()
+  # TODO other stuff
 }
