@@ -6,5 +6,4 @@ RUN Rscript -e 'install.packages("optparse")'
 RUN git clone https://github.com/philerooski/pddb2.git /root/beat-pd
 RUN cd /root/beat-pd && git checkout phil-changes
 
-COPY /root/beat-pd/scoring_code/BEAT-PD_Scoring_Code.R /usr/local/bin/
-CMD BEAT-PD_Scoring_Code.R
+COPY /root/beat-pd/scoring_code/BEAT-PD_Scoring_Code.R /usr/local/bin/BEAT-PD_Scoring_Code.R
