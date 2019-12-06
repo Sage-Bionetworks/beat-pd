@@ -12,6 +12,8 @@
 library(synapser)
 library(optparse)
 library(dplyr)
+library(readr)
+library(jsonlite)
 
 read_args <- function() {
   option_list <- list(
@@ -19,6 +21,9 @@ read_args <- function() {
                 help = "Path to submission (prediction) file."),
     make_option("--phenotype", type = "character",
                 help = "One of 'on_off', 'tremor', 'dyskinesia'."),
+    make_option("--synapse_config", type = "character",
+                help = "Path to Synapse config containing credentials",
+                default = "~"),
     make_option("--output_file", type = "character",
                 help = "Where to output results."))
   opt <- parse_args(OptionParser(option_list = option_list))
@@ -33,7 +38,7 @@ weightedMSE<-function(filename, trait){
   dat$pred<-pred$prediction[match(dat$measurement_id, pred$measurement_id)]
   
   mseframe<- dat %>% group_by(subject_id) %>% summarize(n=length(truth), mse=getMSE(truth, pred))
-  res<-c(sqrt_weighted_mse=weighted.mean(mseframe$mse, sqrt(mseframe$n)), log_weighted_mse=weighted.mean(mseframe$mse, log(mseframe$n)))
+  res<-list(sqrt_weighted_mse=weighted.mean(mseframe$mse, sqrt(mseframe$n)), log_weighted_mse=weighted.mean(mseframe$mse, log(mseframe$n)))
   return(res)
 }
 
@@ -59,5 +64,11 @@ getMSE<-function(x, y){
 
 main <- function() {
   args <- read_args()
-  # TODO other stuff
+  # hacky method to login, waiting on Jira issue SYNR-1007
+  file.copy(args$synapse_config, path.expand("~"), overwrite=TRUE)
+  synLogin()
+  result <- weightedMSE(args$submission_file, args$phenotype)
+  write_json(result, args$output_file)
 }
+
+main()
