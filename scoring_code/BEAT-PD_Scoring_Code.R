@@ -65,7 +65,9 @@ getMSE<-function(x, y){
 main <- function() {
   args <- read_args()
   # hacky method to login, waiting on Jira issue SYNR-1007
-  file.copy(args$synapse_config, path.expand("~"), overwrite=TRUE)
+  file.copy(args$synapse_config,
+            file.path(path.expand("~"), ".synapseConfig"),
+            overwrite=TRUE)
   synLogin()
   result <- weightedMSE(args$submission_file, args$phenotype)
   write_json(result, args$output_file)
