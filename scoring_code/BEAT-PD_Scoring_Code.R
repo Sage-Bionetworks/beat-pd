@@ -1,11 +1,11 @@
 #
 # BEAT-PD Scoring Function:
-# Metric is MSE, scored within individual, 
+# Metric is MSE, scored within individual,
 # and weighted by either log or sqrt
 #
 # Input: filename = csv filepath,
 #         trait = "on_off", "dyskinesia" or "tremor"
-# Output: Vector contianing sqrt-weighted 
+# Output: Vector contianing sqrt-weighted
 #         score and log-weighted score
 #
 
@@ -14,6 +14,11 @@ library(optparse)
 library(dplyr)
 library(readr)
 library(jsonlite)
+
+TEMPLATES <- list(
+  on_off = "syn21344933",
+  dyskinesia = "syn21344934",
+  tremor = "syn21344949")
 
 read_args <- function() {
   option_list <- list(
@@ -30,13 +35,73 @@ read_args <- function() {
   return(opt)
 }
 
+validate_submission <- function(submission_file, trait) {
+  parsing_error_text <- "There were problems reading the submission file."
+  result <- list()
+  # Can we read this file as a CSV?
+  df <- tryCatch({
+    df <- read_csv(submission_file)
+    if (nrow(problems(df))) stop(parsing_error_text)
+    return(df)
+  }, error = function(e) {
+    result$error = TRUE
+    error_message <- gettext(e)
+    result$message <- error_message
+    if (str_detect(error_message, parsing_error_text)) {
+      result$message <- parsing_error_text
+      result$problems <- problems(df)
+    }
+    return(result)
+  })
+  if (is.list(df) && has_name(df, "error") && df$error) {
+    return(df) # actually 'result', our object containing error info
+  }
+  # Does this file have all the required columns?
+  if (!("measurement_id" %in% names(df))) {
+    result$error <- TRUE
+    result$message <- "Did not find the column 'measurement_id'."
+    return(result)
+  } else if (!("prediction" %in% names(df))) {
+    result$error <- TRUE
+    result$message <- "Did not find the column 'prediction'."
+    return(result)
+  }
+  # Can we cast column `prediction` as an integer?
+  integer_prediction <- tryCatch({
+    as.integer(df$prediction)
+  }, error = function(e) {
+    result$error <- TRUE
+    result$message <- "Column 'prediction' must be an integer."
+    return(result)
+  })
+  if (is.list(integer_prediction)
+      && has_name(integer_prediction, "error")
+      && integer_prediction$error) {
+    return(integer_prediction) # actually 'result', our object containing error info
+  }
+  # Do we have all measurement_ids?
+  template <- read_csv(synGet(TEMPLATES[[trait]])$path)
+  missing_ids <- template %>%
+    anti_join(df, by = "measurement_id")
+  if (nrow(missing_ids)) {
+    missing_ids_str <- str_c(missing_ids, collapse = ", ")
+    result$error <- TRUE
+    result$message(paste("Not all required measurement_id values are present",
+                         "for phenotype", trait,
+                         "The following measurement_id values are missing:",
+                         missing_ids_str))
+    return(result)
+  }
+}
+
 weightedMSE<-function(filename, trait){
   # Get predictions and truth
   pred<-read.csv(filename, header=T, as.is=T)
+  pred$prediction <- as.integer(pred$prediction)
   dat<-getTruth(trait)
 
   dat$pred<-pred$prediction[match(dat$measurement_id, pred$measurement_id)]
-  
+
   mseframe<- dat %>% group_by(subject_id) %>% summarize(n=length(truth), mse=getMSE(truth, pred))
   res<-list(sqrt_weighted_mse=weighted.mean(mseframe$mse, sqrt(mseframe$n)), log_weighted_mse=weighted.mean(mseframe$mse, log(mseframe$n)))
   return(res)
@@ -45,12 +110,12 @@ weightedMSE<-function(filename, trait){
 getTruth<-function(trait){
   realsynid<-"syn21292051"
   cissynid<-"syn21291582"
-  
+
   realsyn<-synGet(realsynid)
   real<-read.csv(realsyn$path, header=T, as.is=T)
   cissyn<-synGet(cissynid)
   cis<-read.csv(cissyn$path, header=T, as.is=T)
-  
+
   truth<-rbind(cis, real)
   truth<-truth[, c("measurement_id", "subject_id", trait)]
   names(truth)[3]<-"truth"
@@ -64,12 +129,17 @@ getMSE<-function(x, y){
 
 main <- function() {
   args <- read_args()
+  validation <- validate_submission(args$submission_file, args$phenotype)
+  if (validation$error) {
+    # TODO return error json
+  }
   # hacky method to login, waiting on Jira issue SYNR-1007
   file.copy(args$synapse_config,
             file.path(path.expand("~"), ".synapseConfig"),
             overwrite=TRUE)
   synLogin()
   result <- weightedMSE(args$submission_file, args$phenotype)
+  result$error <- FALSE
   write_json(result, args$output_file)
 }
 
