@@ -159,9 +159,10 @@ getMSE<-function(x, y){
 main <- function() {
   args <- read_args()
   # hacky method to login, waiting on Jira issue SYNR-1007
-  file.copy(args$synapse_config,
-            file.path(path.expand("~"), ".synapseConfig"),
-            overwrite=TRUE)
+  synapse_config_home <- file.path(path.expand("~"), ".synapseConfig")
+  if (path.expand(args$synapse_config) != synapse_config_home) {
+    file.copy(args$synapse_config, synapse_config_home, overwrite=TRUE)
+  }
   synLogin()
   validation <- validate_submission(args$submission_file, args$phenotype)
   if (validation$error) {
