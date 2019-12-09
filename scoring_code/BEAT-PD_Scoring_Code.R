@@ -29,10 +29,9 @@
 #'  "message": [character],
 #'  "problems": [json_formatted_character]}
 
+library(tidyverse)
 library(synapser)
 library(optparse)
-library(dplyr)
-library(readr)
 library(jsonlite)
 
 TEMPLATES <- list(
