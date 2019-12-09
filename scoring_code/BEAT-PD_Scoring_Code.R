@@ -1,13 +1,33 @@
-#
-# BEAT-PD Scoring Function:
-# Metric is MSE, scored within individual,
-# and weighted by either log or sqrt
-#
-# Input: filename = csv filepath,
-#         trait = "on_off", "dyskinesia" or "tremor"
-# Output: Vector contianing sqrt-weighted
-#         score and log-weighted score
-#
+#'
+#' BEAT-PD Scoring Function:
+#' Metric is MSE, scored within individual,
+#' and weighted by either log or sqrt
+#'
+#' Input: Rscript {this_script} --help
+#' Output: a json file
+#'
+#' If the input to --submission_file meets the validation requirements
+#' (link to main project wiki), a json with the format
+#'
+#' {"error": [false]
+#'  "sqrt_weighted_mse": [float],
+#'  "log_weighted_mse": [float]}
+#'
+#' is returned.
+#'
+#' Otherwise, a json with the format
+#'
+#' {"error": [true],
+#'  "message": [character]}
+#'
+#'  is returned.
+#'
+#'  In the special case that we cannot even read the submission file as a csv,
+#'  An additional property `problems` is returned, which is the output of readr::problems
+#'
+#' {"error": [true],
+#'  "message": [character],
+#'  "problems": [json_formatted_character]}
 
 library(synapser)
 library(optparse)
@@ -41,8 +61,10 @@ validate_submission <- function(submission_file, trait) {
   # Can we read this file as a CSV?
   df <- tryCatch({
     df <- read_csv(submission_file)
-    if (nrow(problems(df))) stop(parsing_error_text)
-    return(df)
+    if (nrow(problems(df))) {
+      stop(parsing_error_text)
+    }
+    df
   }, error = function(e) {
     result$error = TRUE
     error_message <- gettext(e)
@@ -66,6 +88,12 @@ validate_submission <- function(submission_file, trait) {
     result$message <- "Did not find the column 'prediction'."
     return(result)
   }
+  # Is measurement_id a character string?
+  if (!is.character(df$measurement_id)) {
+    result$error <- TRUE
+    result$message <- "Column 'measurement_id' must be a character string."
+    return(result)
+  }
   # Can we cast column `prediction` as an integer?
   integer_prediction <- tryCatch({
     as.integer(df$prediction)
@@ -79,19 +107,21 @@ validate_submission <- function(submission_file, trait) {
       && integer_prediction$error) {
     return(integer_prediction) # actually 'result', our object containing error info
   }
-  # Do we have all measurement_ids?
+  # Do we have all measurement_ids for this trait?
   template <- read_csv(synGet(TEMPLATES[[trait]])$path)
   missing_ids <- template %>%
     anti_join(df, by = "measurement_id")
   if (nrow(missing_ids)) {
-    missing_ids_str <- str_c(missing_ids, collapse = ", ")
+    missing_ids_str <- str_c(missing_ids$measurement_id, collapse = ", ")
     result$error <- TRUE
-    result$message(paste("Not all required measurement_id values are present",
-                         "for phenotype", trait,
+    result$message <- paste("Not all required measurement_id values are present",
+                         "for phenotype", paste0(trait, "."),
                          "The following measurement_id values are missing:",
-                         missing_ids_str))
+                         missing_ids_str)
     return(result)
   }
+  result$error <- FALSE
+  return(result)
 }
 
 weightedMSE<-function(filename, trait){
@@ -129,15 +159,16 @@ getMSE<-function(x, y){
 
 main <- function() {
   args <- read_args()
-  validation <- validate_submission(args$submission_file, args$phenotype)
-  if (validation$error) {
-    # TODO return error json
-  }
   # hacky method to login, waiting on Jira issue SYNR-1007
   file.copy(args$synapse_config,
             file.path(path.expand("~"), ".synapseConfig"),
             overwrite=TRUE)
   synLogin()
+  validation <- validate_submission(args$submission_file, args$phenotype)
+  if (validation$error) {
+    write_json(validation, args$output_file)
+    return()
+  }
   result <- weightedMSE(args$submission_file, args$phenotype)
   result$error <- FALSE
   write_json(result, args$output_file)
