@@ -113,10 +113,11 @@ validate_submission <- function(submission_file, trait) {
   if (nrow(missing_ids)) {
     missing_ids_str <- str_c(missing_ids$measurement_id, collapse = "\n")
     result$validation_and_scoring_error <- TRUE
-    result$message <- paste("Not all required measurement_id values are present",
-                         "for phenotype", paste0(trait, "."),
-                         "The following measurement_id values are missing:\n\n",
-                         missing_ids_str)
+    result$message <- paste0(paste(
+      "Not all required measurement_id values are present",
+      "for phenotype", paste0(trait, "."),
+      "The following measurement_id values are missing:\n\n"),
+      missing_ids_str)
     return(result)
   }
   result$validation_and_scoring_error <- FALSE
