@@ -166,12 +166,12 @@ main <- function() {
   synLogin()
   validation <- validate_submission(args$submission_file, args$phenotype)
   if (validation$error) {
-    write_json(validation, args$output_file)
+    write_json(validation, args$output_file, auto_unbox = TRUE)
     return()
   }
   result <- weightedMSE(args$submission_file, args$phenotype)
   result$error <- FALSE
-  write_json(result, args$output_file)
+  write_json(result, args$output_file, auto_unbox = TRUE)
 }
 
 main()
