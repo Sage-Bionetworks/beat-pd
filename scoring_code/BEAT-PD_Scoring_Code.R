@@ -9,7 +9,7 @@
 #' If the input to --submission_file meets the validation requirements
 #' (link to main project wiki), a json with the format
 #'
-#' {"error": [false]
+#' {"validation_and_scoring_error": [false]
 #'  "sqrt_weighted_mse": [float],
 #'  "log_weighted_mse": [float]}
 #'
@@ -17,7 +17,7 @@
 #'
 #' Otherwise, a json with the format
 #'
-#' {"error": [true],
+#' {"validation_and_scoring_error": [true],
 #'  "message": [character]}
 #'
 #'  is returned.
@@ -25,7 +25,7 @@
 #'  In the special case that we cannot even read the submission file as a csv,
 #'  An additional property `problems` is returned, which is the output of readr::problems
 #'
-#' {"error": [true],
+#' {"validation_and_scoring_error": [true],
 #'  "message": [character],
 #'  "problems": [json_formatted_character]}
 
@@ -65,7 +65,7 @@ validate_submission <- function(submission_file, trait) {
     }
     df
   }, error = function(e) {
-    result$error = TRUE
+    result$validation_and_scoring_error = TRUE
     error_message <- gettext(e)
     result$message <- error_message
     if (str_detect(error_message, parsing_error_text)) {
@@ -74,22 +74,22 @@ validate_submission <- function(submission_file, trait) {
     }
     return(result)
   })
-  if (is.list(df) && has_name(df, "error") && df$error) {
+  if (is.list(df) && has_name(df, "validation_and_scoring_error") && df$validation_and_scoring_error) {
     return(df) # actually 'result', our object containing error info
   }
   # Does this file have all the required columns?
   if (!("measurement_id" %in% names(df))) {
-    result$error <- TRUE
+    result$validation_and_scoring_error <- TRUE
     result$message <- "Did not find the column 'measurement_id'."
     return(result)
   } else if (!("prediction" %in% names(df))) {
-    result$error <- TRUE
+    result$validation_and_scoring_error <- TRUE
     result$message <- "Did not find the column 'prediction'."
     return(result)
   }
   # Is measurement_id a character string?
   if (!is.character(df$measurement_id)) {
-    result$error <- TRUE
+    result$validation_and_scoring_error <- TRUE
     result$message <- "Column 'measurement_id' must be a character string."
     return(result)
   }
@@ -97,13 +97,13 @@ validate_submission <- function(submission_file, trait) {
   integer_prediction <- tryCatch({
     as.integer(df$prediction)
   }, error = function(e) {
-    result$error <- TRUE
+    result$validation_and_scoring_error <- TRUE
     result$message <- "Column 'prediction' must be an integer."
     return(result)
   })
   if (is.list(integer_prediction)
-      && has_name(integer_prediction, "error")
-      && integer_prediction$error) {
+      && has_name(integer_prediction, "validation_and_scoring_error")
+      && integer_prediction$validation_and_scoring_error) {
     return(integer_prediction) # actually 'result', our object containing error info
   }
   # Do we have all measurement_ids for this trait?
@@ -112,14 +112,14 @@ validate_submission <- function(submission_file, trait) {
     anti_join(df, by = "measurement_id")
   if (nrow(missing_ids)) {
     missing_ids_str <- str_c(missing_ids$measurement_id, collapse = ", ")
-    result$error <- TRUE
+    result$validation_and_scoring_error <- TRUE
     result$message <- paste("Not all required measurement_id values are present",
                          "for phenotype", paste0(trait, "."),
                          "The following measurement_id values are missing:",
                          missing_ids_str)
     return(result)
   }
-  result$error <- FALSE
+  result$validation_and_scoring_error <- FALSE
   return(result)
 }
 
@@ -165,12 +165,14 @@ main <- function() {
   }
   synLogin()
   validation <- validate_submission(args$submission_file, args$phenotype)
-  if (validation$error) {
+  if (validation$validation_and_scoring_error) {
+    validation$sqrt_weighted_mse <- NA
+    validation$log_weighted_mse <- NA
     write_json(validation, args$output_file, auto_unbox = TRUE)
     return()
   }
   result <- weightedMSE(args$submission_file, args$phenotype)
-  result$error <- FALSE
+  result$validation_and_scoring_error <- FALSE
   write_json(result, args$output_file, auto_unbox = TRUE)
 }
 
