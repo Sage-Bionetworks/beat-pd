@@ -93,6 +93,12 @@ validate_submission <- function(submission_file, trait) {
     result$message <- "Column 'measurement_id' must be a character string."
     return(result)
   }
+  # Are there NA values in column `prediction`?
+  if (any(is.na(df$prediction))) {
+    result$validation_and_scoring_error <- TRUE
+    result$message <- "Column 'prediction' must not contain an NA or missing values."
+    return(result)
+  }
   # Can we cast column `prediction` as an integer?
   integer_prediction <- tryCatch({
     as.integer(df$prediction)
