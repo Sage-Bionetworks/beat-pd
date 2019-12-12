@@ -93,10 +93,16 @@ validate_submission <- function(submission_file, trait) {
     result$message <- "Column 'measurement_id' must be a character string."
     return(result)
   }
+  # Is prediction numeric?
+  if (!is.numeric(df$prediction)) {
+    result$validation_and_scoring_error <- TRUE
+    result$message <- "Column 'prediction' must be unquoted and numeric"
+    return(result)
+  }
   # Are there NA values in column `prediction`?
   if (any(is.na(df$prediction))) {
     result$validation_and_scoring_error <- TRUE
-    result$message <- "Column 'prediction' must not contain an NA or missing values."
+    result$message <- "Column 'prediction' must not contain any NA or missing values."
     return(result)
   }
   # Can we cast column `prediction` as an integer?
@@ -132,7 +138,7 @@ validate_submission <- function(submission_file, trait) {
 
 weightedMSE<-function(filename, trait){
   # Get predictions and truth
-  pred<-read.csv(filename, header=T, as.is=T)
+  pred<-read_csv(filename, header=T, as.is=T)
   pred$prediction <- as.integer(pred$prediction)
   dat<-getTruth(trait)
 
