@@ -138,7 +138,7 @@ validate_submission <- function(submission_file, trait) {
 
 weightedMSE<-function(filename, trait){
   # Get predictions and truth
-  pred<-read_csv(filename, header=T, as.is=T)
+  pred<-read.csv(filename, header=T, as.is=T)
   pred$prediction <- as.integer(pred$prediction)
   dat<-getTruth(trait)
 
