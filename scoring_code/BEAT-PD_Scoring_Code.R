@@ -105,19 +105,6 @@ validate_submission <- function(submission_file, trait) {
     result$message <- "Column 'prediction' must not contain any NA or missing values."
     return(result)
   }
-  # Can we cast column `prediction` as an integer?
-  integer_prediction <- tryCatch({
-    as.integer(df$prediction)
-  }, error = function(e) {
-    result$validation_and_scoring_error <- TRUE
-    result$message <- "Column 'prediction' must be an integer."
-    return(result)
-  })
-  if (is.list(integer_prediction)
-      && has_name(integer_prediction, "validation_and_scoring_error")
-      && integer_prediction$validation_and_scoring_error) {
-    return(integer_prediction) # actually 'result', our object containing error info
-  }
   # Do we have all measurement_ids for this trait?
   template <- read_csv(synGet(TEMPLATES[[trait]])$path)
   missing_ids <- template %>%
@@ -139,7 +126,6 @@ validate_submission <- function(submission_file, trait) {
 weightedMSE<-function(filename, trait){
   # Get predictions and truth
   pred<-read.csv(filename, header=T, as.is=T)
-  pred$prediction <- as.integer(pred$prediction)
   dat<-getTruth(trait)
 
   dat$pred<-pred$prediction[match(dat$measurement_id, pred$measurement_id)]
