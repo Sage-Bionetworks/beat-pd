@@ -62,7 +62,9 @@ validate_submission <- function(submission_file, entity_type, trait) {
   # Did the participant submit something unscoreable like a project?
   if (entity_type != "org.sagebionetworks.repo.model.FileEntity") {
     result$validation_and_scoring_error <- TRUE
-    result$message <- paste("The submission is not a Synapse file.",
+    result$message <- paste("The submission is expected to be a Synapse file,",
+                            "but instead we found a submission of type",
+                            entity_type, ".",
                             "Did you accidentally submit your project?")
     return(result)
   }
