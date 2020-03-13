@@ -43,6 +43,9 @@ read_args <- function() {
   option_list <- list(
     make_option("--submission_file", type = "character",
                 help = "Path to submission (prediction) file."),
+    make_option("--entity_type", type = "character",
+                default = "org.sagebionetworks.repo.model.FileEntity",
+                help = "The entity type (must be org.sagebionetworks.repo.model.FileEntity)"),
     make_option("--phenotype", type = "character",
                 help = "One of 'on_off', 'tremor', 'dyskinesia'."),
     make_option("--synapse_config", type = "character",
@@ -54,9 +57,21 @@ read_args <- function() {
   return(opt)
 }
 
-validate_submission <- function(submission_file, trait) {
-  parsing_error_text <- "There were problems reading the submission file."
+validate_submission <- function(submission_file, entity_type, trait) {
   result <- list()
+  # Did the participant submit something unscoreable like a project?
+  if (entity_type != "org.sagebionetworks.repo.model.FileEntity") {
+    result$validation_and_scoring_error <- TRUE
+    result$message <- paste("The submission is expected to be a Synapse file,",
+                            "but instead we found a submission of type",
+                            entity_type, ".")
+    if (entity_type == "org.sagebionetworks.repo.model.Project") {
+      result$message <- paste(result$message,
+                              "Did you accidentally submit your project?")
+    }
+    return(result)
+  }
+  parsing_error_text <- "There were problems reading the submission file."
   # Can we read this file as a CSV?
   df <- tryCatch({
     df <- read_csv(submission_file)
@@ -65,7 +80,7 @@ validate_submission <- function(submission_file, trait) {
     }
     df
   }, error = function(e) {
-    result$validation_and_scoring_error = TRUE
+    result$validation_and_scoring_error <- TRUE
     error_message <- gettext(e)
     result$message <- error_message
     if (str_detect(error_message, parsing_error_text)) {
@@ -163,7 +178,9 @@ main <- function() {
     file.copy(args$synapse_config, synapse_config_home, overwrite=TRUE)
   }
   synLogin()
-  validation <- validate_submission(args$submission_file, args$phenotype)
+  validation <- validate_submission(submission_file = args$submission_file,
+                                    entity_type = args$entity_type,
+                                    trait = args$phenotype)
   if (validation$validation_and_scoring_error) {
     validation$sqrt_weighted_mse <- NA
     validation$log_weighted_mse <- NA
