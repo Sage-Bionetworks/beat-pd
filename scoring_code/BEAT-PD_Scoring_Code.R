@@ -64,8 +64,11 @@ validate_submission <- function(submission_file, entity_type, trait) {
     result$validation_and_scoring_error <- TRUE
     result$message <- paste("The submission is expected to be a Synapse file,",
                             "but instead we found a submission of type",
-                            entity_type, ".",
-                            "Did you accidentally submit your project?")
+                            entity_type, ".")
+    if (entity_type == "org.sagebionetworks.repo.model.Project") {
+      result$message <- paste(result$message,
+                              "Did you accidentally submit your project?")
+    }
     return(result)
   }
   parsing_error_text <- "There were problems reading the submission file."
