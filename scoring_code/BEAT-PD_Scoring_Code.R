@@ -43,6 +43,9 @@ read_args <- function() {
   option_list <- list(
     make_option("--submission_file", type = "character",
                 help = "Path to submission (prediction) file."),
+    make_option("--entity_type", type = "character",
+                default = "org.sagebionetworks.repo.model.FileEntity",
+                help = "The entity type (must be org.sagebionetworks.repo.model.FileEntity)"),
     make_option("--phenotype", type = "character",
                 help = "One of 'on_off', 'tremor', 'dyskinesia'."),
     make_option("--synapse_config", type = "character",
@@ -54,15 +57,13 @@ read_args <- function() {
   return(opt)
 }
 
-validate_submission <- function(submission_file, trait) {
+validate_submission <- function(submission_file, entity_type, trait) {
   result <- list()
   # Did the participant submit something unscoreable like a project?
-  print(submission_file)
-  print(is.null(submission_file))
-  print(is.na(submission_file))
-  if (is.null(submission_file) || is.na(submission_file)) {
+  if (entity_type != "org.sagebionetworks.repo.model.FileEntity") {
     result$validation_and_scoring_error <- TRUE
-    result$message <- "The submission is not a CSV file. Did you accidentally submit your project?"
+    result$message <- paste("The submission is not a Synapse file.",
+                            "Did you accidentally submit your project?")
     return(result)
   }
   parsing_error_text <- "There were problems reading the submission file."
@@ -172,7 +173,9 @@ main <- function() {
     file.copy(args$synapse_config, synapse_config_home, overwrite=TRUE)
   }
   synLogin()
-  validation <- validate_submission(args$submission_file, args$phenotype)
+  validation <- validate_submission(submission_file = args$submission_file,
+                                    entity_type = args$entity_type,
+                                    trait = args$phenotype)
   if (validation$validation_and_scoring_error) {
     validation$sqrt_weighted_mse <- NA
     validation$log_weighted_mse <- NA
