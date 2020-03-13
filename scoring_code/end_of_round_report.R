@@ -197,7 +197,7 @@ email_submitting_entities <- function(most_recent_submissions, phenotype,
         recipient = recipient)
       synSendMessage(userIds = list(submittingEntity),
                      messageSubject = as.character(
-                       glue::glue("BEAT-PD Round { current_round } Results")),
+                       glue::glue("BEAT-PD Round { current_round } { evaluation_queue } Results")),
                      messageBody = message_body,
                      contentType = "text")
     })
