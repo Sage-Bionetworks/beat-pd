@@ -55,8 +55,17 @@ read_args <- function() {
 }
 
 validate_submission <- function(submission_file, trait) {
-  parsing_error_text <- "There were problems reading the submission file."
   result <- list()
+  # Did the participant submit something unscoreable like a project?
+  print(submission_file)
+  print(is.null(submission_file))
+  print(is.na(submission_file))
+  if (is.null(submission_file) || is.na(submission_file)) {
+    result$validation_and_scoring_error <- TRUE
+    result$message <- "The submission is not a CSV file. Did you accidentally submit your project?"
+    return(result)
+  }
+  parsing_error_text <- "There were problems reading the submission file."
   # Can we read this file as a CSV?
   df <- tryCatch({
     df <- read_csv(submission_file)
@@ -65,7 +74,7 @@ validate_submission <- function(submission_file, trait) {
     }
     df
   }, error = function(e) {
-    result$validation_and_scoring_error = TRUE
+    result$validation_and_scoring_error <- TRUE
     error_message <- gettext(e)
     result$message <- error_message
     if (str_detect(error_message, parsing_error_text)) {
